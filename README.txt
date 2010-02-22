@@ -53,9 +53,11 @@ There is some information about the new features in
 
 Look for notes about features added or changed in Python 2.7.
 
-unittest2 is maintained in an SVN repository courtesy of google code:
+unittest2 is maintained in a mercurial repository. The issue tracker is on
+google code:
 
-* `unittest2 on google code <http://code.google.com/p/unittest-ext/source/browse/#svn/trunk/unittest2>`_
+* `unittest2 hg <http://hg.python.org/unittest2>`_
+* `unittest2 issue tracker <http://code.google.com/p/unittest-ext/issues/list>`_
 
 
 Differences
