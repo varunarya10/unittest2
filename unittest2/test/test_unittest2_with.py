@@ -100,26 +100,22 @@ class TestWith(unittest2.TestCase):
         for test_name, should_pass in (('testSkip', True), 
                                        ('testExpectedFail', True), 
                                        ('testUnexpectedSuccess', False)):
-            with catch_warnings(record=True) as log:
-                result = OldResult()
-                test = Test(test_name)
-                test.run(result)
-                self.assertEqual(len(result.failures), int(not should_pass))
-                warning, = log
-                self.assertIs(warning.category, DeprecationWarning)
+            test = Test(test_name)
+            self.assertOldResultWarning(test, int(not should_pass))
         
     def test_old_testresult_setup(self):
         class Test(unittest2.TestCase):
             def setUp(self):
-                self.skipTest()
+                self.skipTest('no reason')
             def testFoo(self):
                 pass
+        self.assertOldResultWarning(Test('testFoo'), 0)
             
+    def assertOldResultWarning(self, test, failures):
         with catch_warnings(record=True) as log:
             result = OldResult()
-            test = Test('testFoo')
             test.run(result)
-            self.assertEqual(len(result.failures), 0)
+            self.assertEqual(len(result.failures), failures)
             warning, = log
             self.assertIs(warning.category, DeprecationWarning)
 

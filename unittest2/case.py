@@ -272,6 +272,15 @@ class TestCase(unittest.TestCase):
     def __repr__(self):
         return "<%s testMethod=%s>" % \
                (strclass(self.__class__), self._testMethodName)
+    
+    def _addSkip(self, result, reason):
+        addSkip = getattr(result, 'addSkip', None)
+        if addSkip is not None:
+            addSkip(self, reason)
+        else:
+            warnings.warn("Use of a TestResult without an addSkip method is deprecated", 
+                          DeprecationWarning, 2)
+            result.addSuccess(self)
 
     def run(self, result=None):
         orig_result = result
@@ -285,14 +294,8 @@ class TestCase(unittest.TestCase):
         result.startTest(self)
         if getattr(self.__class__, "__unittest_skip__", False):
             # If the whole class was skipped.
-            addSkip = getattr(result, 'addSkip', None)
             try:
-                if addSkip is not None:
-                    addSkip(self, self.__class__.__unittest_skip_why__)
-                else:
-                    warnings.warn("Use of a TestResult without an addSkip method is deprecated", 
-                                  DeprecationWarning)
-                    result.addSuccess(self)
+                self._addSkip(result, self.__class__.__unittest_skip_why__)
             finally:
                 result.stopTest(self)
             return
@@ -302,7 +305,7 @@ class TestCase(unittest.TestCase):
             try:
                 self.setUp()
             except SkipTest, e:
-                result.addSkip(self, str(e))
+                self._addSkip(result, str(e))
             except Exception:
                 result.addError(self, sys.exc_info())
             else:
@@ -327,13 +330,7 @@ class TestCase(unittest.TestCase):
                                       DeprecationWarning)
                         result.addFailure(self, sys.exc_info())
                 except SkipTest, e:
-                    addSkip = getattr(result, 'addSkip', None)
-                    if addSkip is not None:
-                        addSkip(self, str(e))
-                    else:
-                        warnings.warn("Use of a TestResult without an addSkip method is deprecated", 
-                                      DeprecationWarning)
-                        result.addSuccess(self)
+                    self._addSkip(result, str(e))
                 except Exception:
                     result.addError(self, sys.exc_info())
                 else:
