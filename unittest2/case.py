@@ -285,8 +285,12 @@ class TestCase(unittest.TestCase):
         result.startTest(self)
         if getattr(self.__class__, "__unittest_skip__", False):
             # If the whole class was skipped.
+            addSkip = getattr(result, 'addSkip', None)
             try:
-                result.addSkip(self, self.__class__.__unittest_skip_why__)
+                if addSkip is not None:
+                    addSkip(self, self.__class__.__unittest_skip_why__)
+                else:
+                    result.addSuccess(self)
             finally:
                 result.stopTest(self)
             return
@@ -305,11 +309,23 @@ class TestCase(unittest.TestCase):
                 except self.failureException:
                     result.addFailure(self, sys.exc_info())
                 except _ExpectedFailure, e:
-                    result.addExpectedFailure(self, e.exc_info)
+                    addExpectedFailure = getattr(result, 'addExpectedFailure', None)
+                    if addExpectedFailure is not None:
+                        addExpectedFailure(self, e.exc_info)
+                    else:
+                        result.addSuccess(self)
                 except _UnexpectedSuccess:
-                    result.addUnexpectedSuccess(self)
+                    addUnexpectedSuccess = getattr(result, 'addUnexpectedSuccess', None)
+                    if addUnexpectedSuccess is not None:
+                        addUnexpectedSuccess(self)
+                    else:
+                        result.addFailure(self, sys.exc_info())
                 except SkipTest, e:
-                    result.addSkip(self, str(e))
+                    addSkip = getattr(result, 'addSkip', None)
+                    if addSkip is not None:
+                        addSkip(self, str(e))
+                    else:
+                        result.addSuccess(self)
                 except Exception:
                     result.addError(self, sys.exc_info())
                 else:

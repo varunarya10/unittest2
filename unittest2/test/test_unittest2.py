@@ -2058,6 +2058,31 @@ class Test_TestResult(unittest2.TestCase):
                 'docstring.'))
 
 
+classDict = dict(unittest2.TestResult.__dict__)
+for m in 'addSkip', 'addExpectedFailure', 'addUnexpectedSuccess':
+    del classDict[m]
+OldResult = type('OldResult', (object,), classDict)
+
+class Test_OldTestResult(unittest2.TestCase):
+    def testOld(self):
+        class Test(unittest2.TestCase):
+            def testSkip(self):
+                self.skipTest('foobar')
+            @unittest2.expectedFailure
+            def testExpectedFail(self):
+                raise TypeError
+            @unittest2.expectedFailure
+            def testUnexpectedSuccess(self):
+                pass
+        
+        for test_name, should_pass in (('testSkip', True), 
+                                       ('testExpectedFail', True), 
+                                       ('testUnexpectedSuccess', False)):
+            result = OldResult()
+            test = Test(test_name)
+            test.run(result)
+            self.assertEqual(len(result.failures), int(not should_pass))
+
 ### Support code for Test_TestCase
 ################################################################
 
@@ -2575,11 +2600,6 @@ class Test_TestCase(unittest2.TestCase, TestEquality, TestHashing):
         
         self.assertRaises(self.failureException,
                           self.assertDictContainsSubset, {1: "one"}, {})
-        
-        one = ''.join(chr(i) for i in range(255))
-        # this used to cause a UnicodeDecodeError constructing the failure msg
-        self.assertRaises(self.failureException,
-            self.assertDictContainsSubset, {'foo': one}, {'foo': u'\uFFFD'})
 
     def testAssertEqual(self):
         equal_pairs = [

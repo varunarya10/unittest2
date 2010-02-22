@@ -71,5 +71,52 @@ class TestWith(unittest2.TestCase):
         else:
             self.fail("assertRaises() didn't let exception pass through")
 
+    def test_assert_dict_unicode_error(self):
+        with catch_warnings(record=True):
+            # This causes a UnicodeWarning due to its craziness
+            one = ''.join(chr(i) for i in range(255))
+            # this used to cause a UnicodeDecodeError constructing the failure msg
+            with self.assertRaises(self.failureException):
+                self.assertDictContainsSubset({'foo': one}, {'foo': u'\uFFFD'})
+
+# copied from Python 2.6
+try:
+    from warnings import catch_warnings
+except ImportError:
+    class catch_warnings(object):
+        def __init__(self, record=False, module=None):
+            self._record = record
+            self._module = sys.modules['warnings'] if module is None else module
+            self._entered = False
+    
+        def __repr__(self):
+            args = []
+            if self._record:
+                args.append("record=True")
+            if self._module is not sys.modules['warnings']:
+                args.append("module=%r" % self._module)
+            name = type(self).__name__
+            return "%s(%s)" % (name, ", ".join(args))
+    
+        def __enter__(self):
+            if self._entered:
+                raise RuntimeError("Cannot enter %r twice" % self)
+            self._entered = True
+            self._filters = self._module.filters
+            self._module.filters = self._filters[:]
+            self._showwarning = self._module.showwarning
+            if self._record:
+                log = []
+                self._module.showwarning = lambda *args, **kw: None
+                return log
+            else:
+                return None
+    
+        def __exit__(self, *exc_info):
+            if not self._entered:
+                raise RuntimeError("Cannot exit %r without entering first" % self)
+            self._module.filters = self._filters
+            self._module.showwarning = self._showwarning
+
 if __name__ == '__main__':
     unittest2.main()
