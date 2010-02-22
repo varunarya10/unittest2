@@ -120,10 +120,10 @@ class TestWith(unittest2.TestCase):
         self.assertOldResultWarning(Test('testFoo'), 0)
         
     def test_old_testresult_class(self):
-        @unittest2.skip('no reason')
         class Test(unittest2.TestCase):
             def testFoo(self):
                 pass
+        Test = unittest2.skip('no reason')(Test)
         self.assertOldResultWarning(Test('testFoo'), 0)
 
 # copied from Python 2.6
@@ -154,7 +154,9 @@ except ImportError:
             self._showwarning = self._module.showwarning
             if self._record:
                 log = []
-                self._module.showwarning = lambda *args, **kw: None
+                def showwarning(*args, **kwargs):
+                    log.append(WarningMessage(*args, **kwargs))
+                self._module.showwarning = showwarning
                 return log
             else:
                 return None
@@ -164,6 +166,17 @@ except ImportError:
                 raise RuntimeError("Cannot exit %r without entering first" % self)
             self._module.filters = self._filters
             self._module.showwarning = self._showwarning
+
+    class WarningMessage(object):
+        _WARNING_DETAILS = ("message", "category", "filename", "lineno", "file",
+                            "line")
+        def __init__(self, message, category, filename, lineno, file=None,
+                        line=None):
+            local_values = locals()
+            for attr in self._WARNING_DETAILS:
+                setattr(self, attr, local_values[attr])
+            self._category_name = category.__name__ if category else None
+
 
 if __name__ == '__main__':
     unittest2.main()
