@@ -2,11 +2,18 @@ from __future__ import with_statement
 
 import os
 import sys
+import warnings
 
 if os.getcwd() not in sys.path:
     sys.path.append(os.getcwd())
 
 import unittest2
+
+
+classDict = dict(unittest2.TestResult.__dict__)
+for m in 'addSkip', 'addExpectedFailure', 'addUnexpectedSuccess':
+    del classDict[m]
+OldResult = type('OldResult', (object,), classDict)
 
 
 class TestWith(unittest2.TestCase):
@@ -78,6 +85,28 @@ class TestWith(unittest2.TestCase):
             # this used to cause a UnicodeDecodeError constructing the failure msg
             with self.assertRaises(self.failureException):
                 self.assertDictContainsSubset({'foo': one}, {'foo': u'\uFFFD'})
+
+    def test_old_test_result(self):
+        class Test(unittest2.TestCase):
+            def testSkip(self):
+                self.skipTest('foobar')
+            @unittest2.expectedFailure
+            def testExpectedFail(self):
+                raise TypeError
+            @unittest2.expectedFailure
+            def testUnexpectedSuccess(self):
+                pass
+        
+        for test_name, should_pass in (('testSkip', True), 
+                                       ('testExpectedFail', True), 
+                                       ('testUnexpectedSuccess', False)):
+            with catch_warnings(record=True) as log:
+                result = OldResult()
+                test = Test(test_name)
+                test.run(result)
+                self.assertEqual(len(result.failures), int(not should_pass))
+                warning, = log
+                self.assertIs(warning.category, DeprecationWarning)
 
 # copied from Python 2.6
 try:

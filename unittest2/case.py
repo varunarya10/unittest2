@@ -290,6 +290,8 @@ class TestCase(unittest.TestCase):
                 if addSkip is not None:
                     addSkip(self, self.__class__.__unittest_skip_why__)
                 else:
+                    warnings.warn("Use of a TestResult without an addSkip method is deprecated", 
+                                  DeprecationWarning)
                     result.addSuccess(self)
             finally:
                 result.stopTest(self)
@@ -312,19 +314,25 @@ class TestCase(unittest.TestCase):
                     addExpectedFailure = getattr(result, 'addExpectedFailure', None)
                     if addExpectedFailure is not None:
                         addExpectedFailure(self, e.exc_info)
-                    else:
+                    else: 
+                        warnings.warn("Use of a TestResult without an addExpectedFailure method is deprecated", 
+                                      DeprecationWarning)
                         result.addSuccess(self)
                 except _UnexpectedSuccess:
                     addUnexpectedSuccess = getattr(result, 'addUnexpectedSuccess', None)
                     if addUnexpectedSuccess is not None:
                         addUnexpectedSuccess(self)
                     else:
+                        warnings.warn("Use of a TestResult without an addUnexpectedSuccess method is deprecated", 
+                                      DeprecationWarning)
                         result.addFailure(self, sys.exc_info())
                 except SkipTest, e:
                     addSkip = getattr(result, 'addSkip', None)
                     if addSkip is not None:
                         addSkip(self, str(e))
                     else:
+                        warnings.warn("Use of a TestResult without an addSkip method is deprecated", 
+                                      DeprecationWarning)
                         result.addSuccess(self)
                 except Exception:
                     result.addError(self, sys.exc_info())
