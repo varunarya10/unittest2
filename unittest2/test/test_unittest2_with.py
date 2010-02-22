@@ -86,7 +86,7 @@ class TestWith(unittest2.TestCase):
             with self.assertRaises(self.failureException):
                 self.assertDictContainsSubset({'foo': one}, {'foo': u'\uFFFD'})
 
-    def test_old_test_result(self):
+    def test_old_testresult(self):
         class Test(unittest2.TestCase):
             def testSkip(self):
                 self.skipTest('foobar')
@@ -107,6 +107,21 @@ class TestWith(unittest2.TestCase):
                 self.assertEqual(len(result.failures), int(not should_pass))
                 warning, = log
                 self.assertIs(warning.category, DeprecationWarning)
+        
+    def test_old_testresult_setup(self):
+        class Test(unittest2.TestCase):
+            def setUp(self):
+                self.skipTest()
+            def testFoo(self):
+                pass
+            
+        with catch_warnings(record=True) as log:
+            result = OldResult()
+            test = Test('testFoo')
+            test.run(result)
+            self.assertEqual(len(result.failures), 0)
+            warning, = log
+            self.assertIs(warning.category, DeprecationWarning)
 
 # copied from Python 2.6
 try:
