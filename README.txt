@@ -83,6 +83,13 @@ features a ``unit2`` (and ``unit2.py``) script is provided instead.
 CHANGELOG
 =========
 
+0.1.6
+-----
+
+Fix for compatibility with old ``TestResult`` objects. New tests can now be run
+with nosetests (with a DeprecationWarning for ``TestResult`` objects without
+methods to support skipping etc).
+
 0.1
 ---
 
