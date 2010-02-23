@@ -3775,19 +3775,13 @@ class TestDiscovery(unittest2.TestCase):
 
 class TestSetups(unittest2.TestCase):
 
-        
     def test_setup_class(self):
         class Test(unittest2.TestCase):
             setUpCalled = 0
-            tearDownCalled = 0
             @classmethod
             def setUpClass(cls):
                 Test.setUpCalled += 1
-                cls.setUpClass()
-            @classmethod
-            def tearDownClass(cls):
-                Test.tearDownCalled += 1
-                cls.tearDownClass()
+                unittest2.TestCase.setUpClass()
             def test_one(self):
                 pass
             def test_two(self):
@@ -3799,8 +3793,40 @@ class TestSetups(unittest2.TestCase):
         runner.run(suite)
         
         self.assertEqual(Test.setUpCalled, 1)
-        self.assertEqual(Test.tearDownCalled, 1)
 
+
+    def test_teardown_class(self):
+        class Test(unittest2.TestCase):
+            tearDownCalled = 0
+            @classmethod
+            def tearDownClass(cls):
+                Test.tearDownCalled += 1
+                unittest2.TestCase.tearDownClass()
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+            
+        suite = unittest2.defaultTestLoader.loadTestsFromTestCase(Test)
+        runner = unittest2.TextTestRunner(resultclass=unittest2.TestResult,
+                                          stream=StringIO())
+        runner.run(suite)
+        
+        self.assertEqual(Test.tearDownCalled, 1)
+"""
+Class setup is not run for skipped classes
+Outstanding teardowns are run on test run end.
+
+For unittest2 - TestCase without setUpClass should not die
+
+Meaning of SkipTest in setUpClass - skip whole class?
+
+Errors in setUpClass.
+
+Nested test suites - the teardown class should only be executed once, so
+the top level needs marking. (Unless we specify that all tests from a class
+must be in the same suite.)
+"""
 
 if __name__ == "__main__":
     unittest2.main()

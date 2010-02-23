@@ -14,6 +14,9 @@ class TestSuite(unittest.TestSuite):
     in the order in which they were added, aggregating the results. When
     subclassing, do not forget to call the base class constructor.
     """
+    
+    _previousClass = None
+    
     def __init__(self, tests=()):
         self._tests = []
         self.addTests(tests)
@@ -61,7 +64,18 @@ class TestSuite(unittest.TestSuite):
         for test in self:
             if result.shouldStop:
                 break
+            
+            if isinstance(test, unittest.TestCase):
+                previousClass = self._previousClass
+                currentClass = test.__class__
+                if currentClass != previousClass:
+                    currentClass.setUpClass()
+                TestSuite._previousClass = currentClass
+            
             test(result)
+
+        if self._previousClass is not None:
+            self._previousClass.tearDownClass()
         return result
 
     def __call__(self, *args, **kwds):

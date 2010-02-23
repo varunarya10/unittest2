@@ -176,7 +176,6 @@ class TestCase(unittest.TestCase):
 
     longMessage = True
 
-
     def __init__(self, methodName='runTest'):
         """Create an instance of the class that will use the named test
            method when executed. Raises a ValueError if the instance does
@@ -229,10 +228,17 @@ class TestCase(unittest.TestCase):
     def setUp(self):
         "Hook method for setting up the test fixture before exercising it."
         pass
+    
+    @classmethod
+    def setUpClass(cls):
+        "Hook method for setting up class fixture before running tests in the class."
+
+    @classmethod
+    def tearDownClass(cls):
+        "Hook method for deconstructing the class fixture after running all tests in the class."
 
     def tearDown(self):
         "Hook method for deconstructing the test fixture after testing it."
-        pass
 
     def countTestCases(self):
         return 1
