@@ -4,16 +4,13 @@ import os
 import sys
 import warnings
 
+from StringIO import StringIO
+
 if os.getcwd() not in sys.path:
     sys.path.append(os.getcwd())
 
 import unittest2
-
-
-classDict = dict(unittest2.TestResult.__dict__)
-for m in 'addSkip', 'addExpectedFailure', 'addUnexpectedSuccess':
-    del classDict[m]
-OldResult = type('OldResult', (object,), classDict)
+from unittest2.test.support import OldResult, catch_warnings
 
 
 class TestWith(unittest2.TestCase):
@@ -125,58 +122,7 @@ class TestWith(unittest2.TestCase):
                 pass
         Test = unittest2.skip('no reason')(Test)
         self.assertOldResultWarning(Test('testFoo'), 0)
-
-# copied from Python 2.6
-try:
-    from warnings import catch_warnings
-except ImportError:
-    class catch_warnings(object):
-        def __init__(self, record=False, module=None):
-            self._record = record
-            self._module = sys.modules['warnings'] if module is None else module
-            self._entered = False
     
-        def __repr__(self):
-            args = []
-            if self._record:
-                args.append("record=True")
-            if self._module is not sys.modules['warnings']:
-                args.append("module=%r" % self._module)
-            name = type(self).__name__
-            return "%s(%s)" % (name, ", ".join(args))
-    
-        def __enter__(self):
-            if self._entered:
-                raise RuntimeError("Cannot enter %r twice" % self)
-            self._entered = True
-            self._filters = self._module.filters
-            self._module.filters = self._filters[:]
-            self._showwarning = self._module.showwarning
-            if self._record:
-                log = []
-                def showwarning(*args, **kwargs):
-                    log.append(WarningMessage(*args, **kwargs))
-                self._module.showwarning = showwarning
-                return log
-            else:
-                return None
-    
-        def __exit__(self, *exc_info):
-            if not self._entered:
-                raise RuntimeError("Cannot exit %r without entering first" % self)
-            self._module.filters = self._filters
-            self._module.showwarning = self._showwarning
-
-    class WarningMessage(object):
-        _WARNING_DETAILS = ("message", "category", "filename", "lineno", "file",
-                            "line")
-        def __init__(self, message, category, filename, lineno, file=None,
-                        line=None):
-            local_values = locals()
-            for attr in self._WARNING_DETAILS:
-                setattr(self, attr, local_values[attr])
-            self._category_name = category.__name__ if category else None
-
 
 if __name__ == '__main__':
     unittest2.main()

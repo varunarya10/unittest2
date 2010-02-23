@@ -83,8 +83,17 @@ features a ``unit2`` (and ``unit2.py``) script is provided instead.
 CHANGELOG
 =========
 
-0.1.6
------
+2010/02/XX - 0.2.0
+------------------
+
+Addition of optional parameters and empty methods to TestResult so that it can
+be used with the TextTestRunner.
+
+The TextTestRunner is also now compatible with old result objects.
+
+
+2010/02/22 - 0.1.6
+------------------
 
 Fix for compatibility with old ``TestResult`` objects. New tests can now be run
 with nosetests (with a DeprecationWarning for ``TestResult`` objects without

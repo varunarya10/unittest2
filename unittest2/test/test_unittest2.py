@@ -11,6 +11,8 @@ from copy import deepcopy
 from cStringIO import StringIO
 import pickle
 
+from unittest2.test.support import OldResult
+
 ### Support code
 ################################################################
 
@@ -3475,7 +3477,14 @@ class Test_TextTestRunner(unittest2.TestCase):
 
         expectedresult = (runner.stream, DESCRIPTIONS, VERBOSITY)
         self.assertEqual(runner._makeResult(), expectedresult)
-
+        
+    def test_oldresult(self):
+        class Test(unittest2.TestCase):
+            def testFoo(self):
+                pass
+        runner = unittest2.TextTestRunner(resultclass=OldResult,
+                                          stream=StringIO())
+        runner.run(Test('testFoo'))
 
 class TestDiscovery(unittest2.TestCase):
 
@@ -3761,6 +3770,35 @@ class TestDiscovery(unittest2.TestCase):
         self.assertEqual(Loader.args, [('fish', 'eggs', None)])
         self.assertEqual(program.verbosity, 2)
 
+"""
+class TestSetups(unittest2.TestCase):
+
+        
+    def test_setup_class(self):
+        class Test(unittest2.TestCase):
+            setUpCalled = 0
+            tearDownCalled = 0
+            @classmethod
+            def setUpClass(cls):
+                Test.setUpCalled += 1
+                cls.setUpClass()
+            @classmethod
+            def tearDownClass(cls):
+                Test.tearDownCalled += 1
+                cls.tearDownClass()
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+            
+        suite = unittest2.defaultTestLoader.loadTestsFromTestCase(Test)
+        runner = unittest2.TextTestRunner(resultclass=unittest2.TestResult,
+                                          stream=StringIO())
+        runner.run(suite)
+        
+        self.assertEqual(Test.setUpCalled, 1)
+        self.assertEqual(Test.tearDownCalled, 1)
+"""
 
 if __name__ == "__main__":
     unittest2.main()
