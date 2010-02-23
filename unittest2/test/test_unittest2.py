@@ -16,6 +16,9 @@ from unittest2.test.support import OldResult
 ### Support code
 ################################################################
 
+def resultFactory(*_):
+    return unittest2.TestResult()
+
 class LoggingResult(unittest2.TestResult):
     def __init__(self, log):
         self._events = log
@@ -3788,7 +3791,7 @@ class TestSetups(unittest2.TestCase):
                 pass
             
         suite = unittest2.defaultTestLoader.loadTestsFromTestCase(Test)
-        runner = unittest2.TextTestRunner(resultclass=unittest2.TestResult,
+        runner = unittest2.TextTestRunner(resultclass=resultFactory,
                                           stream=StringIO())
         runner.run(suite)
         
@@ -3808,11 +3811,31 @@ class TestSetups(unittest2.TestCase):
                 pass
             
         suite = unittest2.defaultTestLoader.loadTestsFromTestCase(Test)
-        runner = unittest2.TextTestRunner(resultclass=unittest2.TestResult,
+        runner = unittest2.TextTestRunner(resultclass=resultFactory,
                                           stream=StringIO())
         runner.run(suite)
         
         self.assertEqual(Test.tearDownCalled, 1)
+    
+    def test_teardown_class_two_classes(self):
+        class Test(unittest2.TestCase):
+            tearDownCalled = 0
+            @classmethod
+            def tearDownClass(cls):
+                Test.tearDownCalled += 1
+                unittest2.TestCase.tearDownClass()
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+            
+        suite = unittest2.defaultTestLoader.loadTestsFromTestCase(Test)
+        runner = unittest2.TextTestRunner(resultclass=resultFactory,
+                                          stream=StringIO())
+        runner.run(suite)
+        
+        self.assertEqual(Test.tearDownCalled, 1)
+        
 """
 Class setup is not run for skipped classes
 Outstanding teardowns are run on test run end.

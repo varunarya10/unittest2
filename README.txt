@@ -86,10 +86,12 @@ CHANGELOG
 2010/02/XX - 0.2.0
 ------------------
 
-Addition of optional parameters and empty methods to TestResult so that it can
-be used with the TextTestRunner.
+Addition of optional parameters and empty methods to ``TestResult`` so that it can
+be used with the ``TextTestRunner``.
 
-The TextTestRunner is also now compatible with old result objects.
+The ``TextTestRunner`` is also now compatible with old result objects.
+
+``setUpClass`` / ``tearDownClass`` added.
 
 
 2010/02/22 - 0.1.6

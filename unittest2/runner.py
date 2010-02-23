@@ -113,6 +113,9 @@ class TextTestResult(result.TestResult):
             self.stream.writeln(self.separator2)
             self.stream.writeln("%s" % err)
 
+    def stopTestRun(self):
+        super(TextTestResult, self).stopTestRun()
+        self.printErrors()
 
 class TextTestRunner(unittest.TextTestRunner):
     """A test runner class that displays results in textual form.
@@ -146,9 +149,10 @@ class TextTestRunner(unittest.TextTestRunner):
             stopTestRun = getattr(result, 'stopTestRun', None)
             if stopTestRun is not None:
                 stopTestRun()
+            else:
+                result.printErrors()
         stopTime = time.time()
         timeTaken = stopTime - startTime
-        result.printErrors()
         if hasattr(result, 'separator2'):
             self.stream.writeln(result.separator2)
         run = result.testsRun

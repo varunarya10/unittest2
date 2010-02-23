@@ -17,7 +17,7 @@ class TestResult(unittest.TestResult):
     contain tuples of (testcase, exceptioninfo), where exceptioninfo is the
     formatted traceback of the error that occurred.
     """
-    def __init__(self, stream=None, descriptions=None, verbosity=None):
+    def __init__(self):
         self.failures = []
         self.errors = []
         self.testsRun = 0
@@ -26,9 +26,6 @@ class TestResult(unittest.TestResult):
         self.unexpectedSuccesses = []
         self.shouldStop = False
     
-    def printErrors(self):
-        "Called by TestRunner after test run"
-
     def startTest(self, test):
         "Called when the given test is about to be run"
         self.testsRun += 1
