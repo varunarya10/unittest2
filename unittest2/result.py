@@ -28,7 +28,6 @@ class TestResult(unittest.TestResult):
     
     def printErrors(self):
         "Called by TestRunner after test run"
-        pass
 
     def startTest(self, test):
         "Called when the given test is about to be run"

@@ -3484,6 +3484,8 @@ class Test_TextTestRunner(unittest2.TestCase):
                 pass
         runner = unittest2.TextTestRunner(resultclass=OldResult,
                                           stream=StringIO())
+        # This will raise an exception if TextTestRunner can't handle old
+        # test result objects
         runner.run(Test('testFoo'))
 
 class TestDiscovery(unittest2.TestCase):
@@ -3770,7 +3772,7 @@ class TestDiscovery(unittest2.TestCase):
         self.assertEqual(Loader.args, [('fish', 'eggs', None)])
         self.assertEqual(program.verbosity, 2)
 
-"""
+
 class TestSetups(unittest2.TestCase):
 
         
@@ -3798,7 +3800,7 @@ class TestSetups(unittest2.TestCase):
         
         self.assertEqual(Test.setUpCalled, 1)
         self.assertEqual(Test.tearDownCalled, 1)
-"""
+
 
 if __name__ == "__main__":
     unittest2.main()
