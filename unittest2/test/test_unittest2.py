@@ -3793,9 +3793,11 @@ class TestSetups(unittest2.TestCase):
         suite = unittest2.defaultTestLoader.loadTestsFromTestCase(Test)
         runner = unittest2.TextTestRunner(resultclass=resultFactory,
                                           stream=StringIO())
-        runner.run(suite)
+        result = runner.run(suite)
         
         self.assertEqual(Test.setUpCalled, 1)
+        self.assertEqual(result.testsRun, 2)
+        self.assertEqual(len(result.errors), 0)
 
 
     def test_teardown_class(self):
@@ -3813,9 +3815,11 @@ class TestSetups(unittest2.TestCase):
         suite = unittest2.defaultTestLoader.loadTestsFromTestCase(Test)
         runner = unittest2.TextTestRunner(resultclass=resultFactory,
                                           stream=StringIO())
-        runner.run(suite)
+        result = runner.run(suite)
         
         self.assertEqual(Test.tearDownCalled, 1)
+        self.assertEqual(result.testsRun, 2)
+        self.assertEqual(len(result.errors), 0)
     
     def test_teardown_class_two_classes(self):
         class Test(unittest2.TestCase):
@@ -3829,26 +3833,58 @@ class TestSetups(unittest2.TestCase):
             def test_two(self):
                 pass
             
+        class Test2(unittest2.TestCase):
+            tearDownCalled = 0
+            @classmethod
+            def tearDownClass(cls):
+                Test2.tearDownCalled += 1
+                unittest2.TestCase.tearDownClass()
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+            
         suite = unittest2.defaultTestLoader.loadTestsFromTestCase(Test)
+        suite.addTests(unittest2.defaultTestLoader.loadTestsFromTestCase(Test2))
         runner = unittest2.TextTestRunner(resultclass=resultFactory,
                                           stream=StringIO())
-        runner.run(suite)
+        result = runner.run(suite)
         
         self.assertEqual(Test.tearDownCalled, 1)
+        self.assertEqual(Test2.tearDownCalled, 1)
+        self.assertEqual(result.testsRun, 4)
+        self.assertEqual(len(result.errors), 0)
+
+    def test_error_in_setupclass(self):
+        e = TypeError('foo')
+        class BrokenTest(unittest2.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                raise e
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+            
+        suite = unittest2.defaultTestLoader.loadTestsFromTestCase(BrokenTest)
+        runner = unittest2.TextTestRunner(resultclass=resultFactory,
+                                          stream=StringIO())
+        result = runner.run(suite)
         
+        self.assertEqual(result.testsRun, 0)
+        self.assertEqual(len(result.errors), 1)
 """
 Class setup is not run for skipped classes
-Outstanding teardowns are run on test run end.
 
 For unittest2 - TestCase without setUpClass should not die
 
-Meaning of SkipTest in setUpClass - skip whole class?
+Meaning of SkipTest in setUpClass - skip whole class.
 
-Errors in setUpClass.
+Report errors from setUpClass.
 
-Nested test suites - the teardown class should only be executed once, so
-the top level needs marking. (Unless we specify that all tests from a class
-must be in the same suite.)
+To document:
+    setUpClass failure means that tests in that class will *not* be run
+    and reported.
 """
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
 """TestSuite"""
 
+import sys
 import unittest
-from unittest2 import case
-from unittest2 import util
+from unittest2 import case, util
 
 
 class TestSuite(unittest.TestSuite):
@@ -69,8 +69,20 @@ class TestSuite(unittest.TestSuite):
                 previousClass = self._previousClass
                 currentClass = test.__class__
                 if currentClass != previousClass:
-                    currentClass.setUpClass()
+                    if self._previousClass is not None:
+                        self._previousClass.tearDownClass()
+                    
+                    try:
+                        currentClass.setUpClass()
+                    except:
+                        test.__class__._classSetupFailed = True
+                        result.addError(test, sys.exc_info())
+                    else:
+                        test.__class__._classSetupFailed = False
                 TestSuite._previousClass = currentClass
+                
+                if test.__class__._classSetupFailed:
+                    continue
             
             test(result)
 
