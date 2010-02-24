@@ -108,8 +108,13 @@ class TestSuite(unittest.TestSuite):
             try:
                 result._previousTestClass.tearDownClass()
             except:
-                result.addError(test, sys.exc_info())
+                self._addClassTearDownError(result)
         return result
+
+    def _addClassTearDownError(self, result):
+        className = util.strclass(result._previousTestClass)
+        error = _ErrorHolder('Error in classTearDown: %s' % className)
+        result.addError(error, sys.exc_info())
 
     def __call__(self, *args, **kwds):
         return self.run(*args, **kwds)
@@ -119,6 +124,41 @@ class TestSuite(unittest.TestSuite):
         for test in self:
             test.debug()
 
+
+class _ErrorHolder(object):
+    """
+    Placeholder for a TestCase inside a result. As far as a TestResult
+    is concerned, this looks exactly like a unit test. Used to insert
+    arbitrary errors into a test suite run.
+    """
+    # Inspired by the ErrorHolder from Twisted:
+    # http://twistedmatrix.com/trac/browser/trunk/twisted/trial/runner.py
+
+    # attribute used by TestResult._exc_info_to_string
+    failureException = None
+
+    def __init__(self, description):
+        self.description = description
+
+    def id(self):
+        return self.description
+
+    def shortDescription(self):
+        return self.description
+
+    def __repr__(self):
+        return "<ErrorHolder description=%r error=%r>" % (self.description,)
+
+    def run(self, result):
+        # could call result.addError(...) - but this test-like object
+        # shouldn't be run anyway
+        pass
+
+    def __call__(self, result):
+        return self.run(result)
+
+    def countTestCases(self):
+        return 0
 
 def _isnotsuite(test):
     try:

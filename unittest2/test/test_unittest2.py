@@ -3742,6 +3742,14 @@ class TestDiscovery(unittest2.TestCase):
 
 class TestSetups(unittest2.TestCase):
 
+    def runTests(self, *tests):
+        suite = unittest2.TestSuite()
+        for test in tests:
+            suite.addTests(unittest2.defaultTestLoader.loadTestsFromTestCase(test))
+        runner = unittest2.TextTestRunner(resultclass=resultFactory,
+                                          stream=StringIO())
+        return runner.run(suite)
+
     def test_setup_class(self):
         class Test(unittest2.TestCase):
             setUpCalled = 0
@@ -3841,18 +3849,10 @@ class TestSetups(unittest2.TestCase):
                 pass
             def test_two(self):
                 pass
-            
+        
         result = self.runTests(Test, Test2)
         self.assertEqual(result.testsRun, 4)
         self.assertEqual(len(result.errors), 2)
-
-    def runTests(self, *tests):
-        suite = unittest2.TestSuite()
-        for test in tests:
-            suite.addTests(unittest2.defaultTestLoader.loadTestsFromTestCase(test))
-        runner = unittest2.TextTestRunner(resultclass=resultFactory,
-                                          stream=StringIO())
-        return runner.run(suite)
 
     def test_setup_module(self):
         class Module(object):
@@ -3889,6 +3889,8 @@ Better reporting of errors from setUpClass. (Currently just using addError.)
 To document:
     setUpClass failure means that tests in that class will *not* be run
     and reported.
+
+TestSuite.debug now has very different semantics from TestSuite.run().
 """
 
 if __name__ == "__main__":
