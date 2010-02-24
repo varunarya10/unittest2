@@ -3754,15 +3754,11 @@ class TestSetups(unittest2.TestCase):
             def test_two(self):
                 pass
             
-        suite = unittest2.defaultTestLoader.loadTestsFromTestCase(Test)
-        runner = unittest2.TextTestRunner(resultclass=resultFactory,
-                                          stream=StringIO())
-        result = runner.run(suite)
+        result = self.runTests(Test)
         
         self.assertEqual(Test.setUpCalled, 1)
         self.assertEqual(result.testsRun, 2)
         self.assertEqual(len(result.errors), 0)
-
 
     def test_teardown_class(self):
         class Test(unittest2.TestCase):
@@ -3776,10 +3772,7 @@ class TestSetups(unittest2.TestCase):
             def test_two(self):
                 pass
             
-        suite = unittest2.defaultTestLoader.loadTestsFromTestCase(Test)
-        runner = unittest2.TextTestRunner(resultclass=resultFactory,
-                                          stream=StringIO())
-        result = runner.run(suite)
+        result = self.runTests(Test)
         
         self.assertEqual(Test.tearDownCalled, 1)
         self.assertEqual(result.testsRun, 2)
@@ -3808,11 +3801,7 @@ class TestSetups(unittest2.TestCase):
             def test_two(self):
                 pass
             
-        suite = unittest2.defaultTestLoader.loadTestsFromTestCase(Test)
-        suite.addTests(unittest2.defaultTestLoader.loadTestsFromTestCase(Test2))
-        runner = unittest2.TextTestRunner(resultclass=resultFactory,
-                                          stream=StringIO())
-        result = runner.run(suite)
+        result = self.runTests(Test, Test2)
         
         self.assertEqual(Test.tearDownCalled, 1)
         self.assertEqual(Test2.tearDownCalled, 1)
@@ -3828,11 +3817,8 @@ class TestSetups(unittest2.TestCase):
                 pass
             def test_two(self):
                 pass
-            
-        suite = unittest2.defaultTestLoader.loadTestsFromTestCase(BrokenTest)
-        runner = unittest2.TextTestRunner(resultclass=resultFactory,
-                                          stream=StringIO())
-        result = runner.run(suite)
+        
+        result = self.runTests(BrokenTest)
         
         self.assertEqual(result.testsRun, 0)
         self.assertEqual(len(result.errors), 1)
@@ -3856,14 +3842,39 @@ class TestSetups(unittest2.TestCase):
             def test_two(self):
                 pass
             
-        suite = unittest2.defaultTestLoader.loadTestsFromTestCase(Test)
-        suite.addTests(unittest2.defaultTestLoader.loadTestsFromTestCase(Test2))
-        runner = unittest2.TextTestRunner(resultclass=resultFactory,
-                                          stream=StringIO())
-        result = runner.run(suite)
-        
+        result = self.runTests(Test, Test2)
         self.assertEqual(result.testsRun, 4)
         self.assertEqual(len(result.errors), 2)
+
+    def runTests(self, *tests):
+        suite = unittest2.TestSuite()
+        for test in tests:
+            suite.addTests(unittest2.defaultTestLoader.loadTestsFromTestCase(test))
+        runner = unittest2.TextTestRunner(resultclass=resultFactory,
+                                          stream=StringIO())
+        return runner.run(suite)
+
+    def test_setup_module(self):
+        class Module(object):
+            moduleSetup = False
+            @staticmethod
+            def setUpModule():
+                Module.moduleSetup = True
+        
+        class Test(unittest2.TestCase):
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+        Test.__module__ = 'Module'
+        sys.modules['Module'] = Module
+        
+        result = self.runTests(Test)
+        self.assertTrue(Module.moduleSetup)
+        self.assertEqual(result.testsRun, 2)
+        self.assertEqual(len(result.errors), 0)
+        
+
 """
 Class setup is not run for skipped classes
 

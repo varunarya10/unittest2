@@ -58,29 +58,46 @@ class TestSuite(unittest.TestSuite):
         for test in tests:
             self.addTest(test)
 
+    def _handleClassFixture(self, test, result):
+        previousClass = getattr(result, '_previousTestClass', None)
+        currentClass = test.__class__
+        if currentClass == previousClass:
+            return
+        if previousClass is not None:
+            try:
+                previousClass.tearDownClass()
+            except:
+                result.addError(test, sys.exc_info())
+        
+        try:
+            currentClass.setUpClass()
+        except:
+            test.__class__._classSetupFailed = True
+            result.addError(test, sys.exc_info())
+        else:
+            test.__class__._classSetupFailed = False
+    
+    def _handleModuleFixture(self, test, result):
+        previousModule = None
+        previousClass = getattr(result, '_previousTestClass', None)
+        if previousClass is not None:
+            previousModule = previousClass.__module__
+        currentModule = test.__class__.__module__
+        if currentModule != previousModule:
+            module = sys.modules[currentModule]
+            setUpModule = getattr(module, 'setUpModule', None)
+            if setUpModule is not None:
+                setUpModule()
+
     def run(self, result):
         for test in self:
             if result.shouldStop:
                 break
             
             if _isnotsuite(test):
-                previousClass = getattr(result, '_previousTestClass', None)
-                currentClass = test.__class__
-                if currentClass != previousClass:
-                    if previousClass is not None:
-                        try:
-                            previousClass.tearDownClass()
-                        except:
-                            result.addError(test, sys.exc_info())
-                    
-                    try:
-                        currentClass.setUpClass()
-                    except:
-                        test.__class__._classSetupFailed = True
-                        result.addError(test, sys.exc_info())
-                    else:
-                        test.__class__._classSetupFailed = False
-                result._previousTestClass = currentClass
+                self._handleClassFixture(test, result)
+                self._handleModuleFixture(test, result)
+                result._previousTestClass = test.__class__
                 
                 if test.__class__._classSetupFailed:
                     continue
