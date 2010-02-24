@@ -176,10 +176,10 @@ class TestCase(unittest.TestCase):
 
     longMessage = True
     
-    # This attribute is used by TestSuite to determine whether the classSetUp
-    # failed and the test should not be run.
+    # Attributes used by TestSuite for classSetUp and classTearDown
     
     _classSetupFailed = False
+    _classTornDown = False
 
     def __init__(self, methodName='runTest'):
         """Create an instance of the class that will use the named test

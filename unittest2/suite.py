@@ -63,19 +63,16 @@ class TestSuite(unittest.TestSuite):
         currentClass = test.__class__
         if currentClass == previousClass:
             return
-        if previousClass is not None:
-            try:
-                previousClass.tearDownClass()
-            except:
-                result.addError(test, sys.exc_info())
+        self._tearDownPreviousClass(result)
+        currentClass._classTornDown = False
         
         try:
             currentClass.setUpClass()
         except:
-            test.__class__._classSetupFailed = True
-            result.addError(test, sys.exc_info())
+            currentClass._classSetupFailed = True
+            self._addClassSetUpError(result, currentClass)
         else:
-            test.__class__._classSetupFailed = False
+            currentClass._classSetupFailed = False
     
     def _handleModuleFixture(self, test, result):
         previousModule = None
@@ -90,6 +87,7 @@ class TestSuite(unittest.TestSuite):
                 setUpModule()
 
     def run(self, result):
+        test = None
         for test in self:
             if result.shouldStop:
                 break
@@ -104,16 +102,31 @@ class TestSuite(unittest.TestSuite):
             
             test(result)
 
-        if getattr(result, '_previousTestClass', None) is not None:
-            try:
-                result._previousTestClass.tearDownClass()
-            except:
-                self._addClassTearDownError(result)
+        if _isnotsuite(test):
+            self._tearDownPreviousClass(result)
+            
         return result
+    
+    def _tearDownPreviousClass(self, result):
+        if getattr(result, '_previousTestClass', None) is None:
+            return
+        previousClass = result._previousTestClass
+        if getattr(previousClass, '_classTornDown', True):
+            return
+        try:
+            result._previousTestClass.tearDownClass()
+        except:
+            self._addClassTearDownError(result)
+        previousClass._classTornDown = True
 
     def _addClassTearDownError(self, result):
         className = util.strclass(result._previousTestClass)
         error = _ErrorHolder('Error in classTearDown: %s' % className)
+        result.addError(error, sys.exc_info())
+
+    def _addClassSetUpError(self, result, klass):
+        className = util.strclass(klass)
+        error = _ErrorHolder('Error in classSetUp: %s' % className)
         result.addError(error, sys.exc_info())
 
     def __call__(self, *args, **kwds):
@@ -124,6 +137,10 @@ class TestSuite(unittest.TestSuite):
         for test in self:
             test.debug()
 
+class _WrapperSuite(TestSuite):
+    def run(self, result):
+        TestSuite.run(self, result)
+        self._tearDownPreviousClass(result)
 
 class _ErrorHolder(object):
     """
@@ -144,10 +161,10 @@ class _ErrorHolder(object):
         return self.description
 
     def shortDescription(self):
-        return self.description
+        return None
 
     def __repr__(self):
-        return "<ErrorHolder description=%r error=%r>" % (self.description,)
+        return "<ErrorHolder description=%r>" % (self.description,)
 
     def run(self, result):
         # could call result.addError(...) - but this test-like object
