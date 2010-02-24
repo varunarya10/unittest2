@@ -137,11 +137,6 @@ class TestSuite(unittest.TestSuite):
         for test in self:
             test.debug()
 
-class _WrapperSuite(TestSuite):
-    def run(self, result):
-        TestSuite.run(self, result)
-        self._tearDownPreviousClass(result)
-
 class _ErrorHolder(object):
     """
     Placeholder for a TestCase inside a result. As far as a TestResult
