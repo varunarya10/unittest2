@@ -1,21 +1,39 @@
 import sys
-import unittest2
 import warnings
 
 
-classDict = dict(unittest2.TestResult.__dict__)
-for m in ('addSkip', 'addExpectedFailure', 'addUnexpectedSuccess',
-           '__init__'):
-    del classDict[m]
+class OldTestResult(object):
+    """An object honouring TestResult before startTestRun/stopTestRun."""
 
-def __init__(self, stream=None, descriptions=None, verbosity=None):
-    self.failures = []
-    self.errors = []
-    self.testsRun = 0
-    self.shouldStop = False
-classDict['__init__'] = __init__
-OldResult = type('OldResult', (object,), classDict)
+    def __init__(self, *_):
+        self.failures = []
+        self.errors = []
+        self.testsRun = 0
+        self.skipped = []
+        self.expectedFailures = []
+        self.unexpectedSuccesses = []
+        self.shouldStop = False
 
+    def startTest(self, test):
+        pass
+
+    def stopTest(self, test):
+        pass
+
+    def addError(self, test, err):
+        self.errors.append((test, err))
+
+    def addFailure(self, test, err):
+        self.failures.append((test, err))
+
+    def addSuccess(self, test):
+        pass
+
+    def wasSuccessful(self):
+        return True
+
+    def printErrors(self):
+        pass
 
 # copied from Python 2.6
 try:

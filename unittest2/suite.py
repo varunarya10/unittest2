@@ -15,8 +15,6 @@ class TestSuite(unittest.TestSuite):
     subclassing, do not forget to call the base class constructor.
     """
     
-    _previousClass = None
-    
     def __init__(self, tests=()):
         self._tests = []
         self.addTests(tests)
@@ -65,12 +63,15 @@ class TestSuite(unittest.TestSuite):
             if result.shouldStop:
                 break
             
-            if isinstance(test, unittest.TestCase):
-                previousClass = self._previousClass
+            if _isnotsuite(test):
+                previousClass = getattr(result, '_previousTestClass', None)
                 currentClass = test.__class__
                 if currentClass != previousClass:
-                    if self._previousClass is not None:
-                        self._previousClass.tearDownClass()
+                    if previousClass is not None:
+                        try:
+                            previousClass.tearDownClass()
+                        except:
+                            result.addError(test, sys.exc_info())
                     
                     try:
                         currentClass.setUpClass()
@@ -79,15 +80,18 @@ class TestSuite(unittest.TestSuite):
                         result.addError(test, sys.exc_info())
                     else:
                         test.__class__._classSetupFailed = False
-                TestSuite._previousClass = currentClass
+                result._previousTestClass = currentClass
                 
                 if test.__class__._classSetupFailed:
                     continue
             
             test(result)
 
-        if self._previousClass is not None:
-            self._previousClass.tearDownClass()
+        if getattr(result, '_previousTestClass', None) is not None:
+            try:
+                result._previousTestClass.tearDownClass()
+            except:
+                result.addError(test, sys.exc_info())
         return result
 
     def __call__(self, *args, **kwds):
@@ -97,3 +101,11 @@ class TestSuite(unittest.TestSuite):
         """Run the tests without collecting errors in a TestResult"""
         for test in self:
             test.debug()
+
+
+def _isnotsuite(test):
+    try:
+        iter(test)
+    except TypeError:
+        return True
+    return False

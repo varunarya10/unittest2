@@ -17,6 +17,7 @@ class TestResult(unittest.TestResult):
     contain tuples of (testcase, exceptioninfo), where exceptioninfo is the
     formatted traceback of the error that occurred.
     """
+    _previousTestClass = None
     def __init__(self):
         self.failures = []
         self.errors = []

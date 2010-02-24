@@ -11,7 +11,7 @@ from copy import deepcopy
 from cStringIO import StringIO
 import pickle
 
-from unittest2.test.support import OldResult
+from unittest2.test.support import OldTestResult
 
 ### Support code
 ################################################################
@@ -2092,37 +2092,6 @@ def GetLoggingTestCase():
             self.events.append('tearDown')
     return LoggingTestCase
 
-class ResultWithNoStartTestRunStopTestRun(object):
-    """An object honouring TestResult before startTestRun/stopTestRun."""
-
-    def __init__(self):
-        self.failures = []
-        self.errors = []
-        self.testsRun = 0
-        self.skipped = []
-        self.expectedFailures = []
-        self.unexpectedSuccesses = []
-        self.shouldStop = False
-
-    def startTest(self, test):
-        pass
-
-    def stopTest(self, test):
-        pass
-
-    def addError(self, test):
-        pass
-
-    def addFailure(self, test):
-        pass
-
-    def addSuccess(self, test):
-        pass
-
-    def wasSuccessful(self):
-        return True
-
-
 ################################################################
 ### /Support code for Test_TestCase
 
@@ -2362,7 +2331,7 @@ class Test_TestCase(unittest2.TestCase, TestEquality, TestHashing):
 
         class Foo(unittest2.TestCase):
             def defaultTestResult(self):
-                return ResultWithNoStartTestRunStopTestRun()
+                return OldTestResult()
             def test(self):
                 pass
 
@@ -3420,19 +3389,14 @@ class Test_TextTestRunner(unittest2.TestCase):
     """Tests for TextTestRunner."""
 
     def test_works_with_result_without_startTestRun_stopTestRun(self):
-        class OldTextResult(ResultWithNoStartTestRunStopTestRun):
+        class OldTextResult(OldTestResult):
+            def __init__(self, *_):
+                super(OldTextResult, self).__init__()
             separator2 = ''
             def printErrors(self):
                 pass
 
-        class Runner(unittest2.TextTestRunner):
-            def __init__(self):
-                super(Runner, self).__init__(StringIO())
-
-            def _makeResult(self):
-                return OldTextResult()
-
-        runner = Runner()
+        runner = unittest2.TextTestRunner(stream=StringIO(), resultclass=OldTextResult)
         runner.run(unittest2.TestSuite())
 
     def test_startTestRun_stopTestRun_called(self):
@@ -3485,7 +3449,7 @@ class Test_TextTestRunner(unittest2.TestCase):
         class Test(unittest2.TestCase):
             def testFoo(self):
                 pass
-        runner = unittest2.TextTestRunner(resultclass=OldResult,
+        runner = unittest2.TextTestRunner(resultclass=OldTestResult,
                                           stream=StringIO())
         # This will raise an exception if TextTestRunner can't handle old
         # test result objects
@@ -3856,11 +3820,10 @@ class TestSetups(unittest2.TestCase):
         self.assertEqual(len(result.errors), 0)
 
     def test_error_in_setupclass(self):
-        e = TypeError('foo')
         class BrokenTest(unittest2.TestCase):
             @classmethod
             def setUpClass(cls):
-                raise e
+                raise TypeError('foo')
             def test_one(self):
                 pass
             def test_two(self):
@@ -3873,6 +3836,34 @@ class TestSetups(unittest2.TestCase):
         
         self.assertEqual(result.testsRun, 0)
         self.assertEqual(len(result.errors), 1)
+
+    def test_error_in_teardown_class(self):
+        class Test(unittest2.TestCase):
+            @classmethod
+            def tearDownClass(cls):
+                raise TypeError('foo')
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+            
+        class Test2(unittest2.TestCase):
+            @classmethod
+            def tearDownClass(cls):
+                raise TypeError('foo')
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+            
+        suite = unittest2.defaultTestLoader.loadTestsFromTestCase(Test)
+        suite.addTests(unittest2.defaultTestLoader.loadTestsFromTestCase(Test2))
+        runner = unittest2.TextTestRunner(resultclass=resultFactory,
+                                          stream=StringIO())
+        result = runner.run(suite)
+        
+        self.assertEqual(result.testsRun, 4)
+        self.assertEqual(len(result.errors), 2)
 """
 Class setup is not run for skipped classes
 
@@ -3880,7 +3871,9 @@ For unittest2 - TestCase without setUpClass should not die
 
 Meaning of SkipTest in setUpClass - skip whole class.
 
-Report errors from setUpClass.
+Better reporting of errors from setUpClass. (Currently just using addError.)
+
+*Wrong* test is reported for tearDownClass.
 
 To document:
     setUpClass failure means that tests in that class will *not* be run

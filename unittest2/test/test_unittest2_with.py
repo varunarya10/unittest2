@@ -10,7 +10,7 @@ if os.getcwd() not in sys.path:
     sys.path.append(os.getcwd())
 
 import unittest2
-from unittest2.test.support import OldResult, catch_warnings
+from unittest2.test.support import OldTestResult, catch_warnings
 
 
 class TestWith(unittest2.TestCase):
@@ -85,7 +85,7 @@ class TestWith(unittest2.TestCase):
 
     def assertOldResultWarning(self, test, failures):
         with catch_warnings(record=True) as log:
-            result = OldResult()
+            result = OldTestResult()
             test.run(result)
             self.assertEqual(len(result.failures), failures)
             warning, = log

@@ -5,6 +5,7 @@ import time
 import unittest
 
 from unittest2 import result
+from unittest2.suite import TestSuite
 
 
 class _WritelnDecorator(object):
