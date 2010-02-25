@@ -101,7 +101,9 @@ class TestSuite(unittest.TestSuite):
                     continue
             
             test(result)
-
+        
+        if _isnotsuite(test):
+            self._tearDownPreviousClass(result)
         return result
     
     def _tearDownPreviousClass(self, result):
@@ -118,12 +120,12 @@ class TestSuite(unittest.TestSuite):
 
     def _addClassTearDownError(self, result):
         className = util.strclass(result._previousTestClass)
-        error = _ErrorHolder('Error in classTearDown: %s' % className)
+        error = _ErrorHolder('classTearDown (%s)' % className)
         result.addError(error, sys.exc_info())
 
     def _addClassSetUpError(self, result, klass):
         className = util.strclass(klass)
-        error = _ErrorHolder('Error in classSetUp: %s' % className)
+        error = _ErrorHolder('classSetUp (%s)' % className)
         result.addError(error, sys.exc_info())
 
     def __call__(self, *args, **kwds):
@@ -134,10 +136,15 @@ class TestSuite(unittest.TestSuite):
         for test in self:
             test.debug()
 
-class _WrapperSuite(TestSuite):
+
+class WrapperSuite(TestSuite):
+    """Suites run by the TextTestRunner are wrapped with this class.
+    
+    It calls final class and module tearDown methods on test run end."""
     def run(self, result):
         TestSuite.run(self, result)
         self._tearDownPreviousClass(result)
+
 
 class _ErrorHolder(object):
     """
@@ -162,6 +169,9 @@ class _ErrorHolder(object):
 
     def __repr__(self):
         return "<ErrorHolder description=%r>" % (self.description,)
+
+    def __str__(self):
+        return self.id()
 
     def run(self, result):
         # could call result.addError(...) - but this test-like object

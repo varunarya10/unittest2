@@ -9,9 +9,6 @@ class OldTestResult(object):
         self.failures = []
         self.errors = []
         self.testsRun = 0
-        self.skipped = []
-        self.expectedFailures = []
-        self.unexpectedSuccesses = []
         self.shouldStop = False
 
     def startTest(self, test):
