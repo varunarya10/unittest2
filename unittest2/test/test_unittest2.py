@@ -3875,6 +3875,23 @@ class TestSetups(unittest2.TestCase):
         self.assertEqual(str(error), 
                     'classTearDown (unittest2.test.test_unittest2.Test)')
 
+    def test_class_not_torndown_when_setup_fails(self):
+        class Test(unittest2.TestCase):
+            tornDown = False
+            @classmethod
+            def setUpClass(cls):
+                raise TypeError
+            @classmethod
+            def tearDownClass(cls):
+                Test.tornDown = True
+                raise TypeError('foo')
+            def test_one(self):
+                pass
+
+        self.runTests(Test)
+        self.assertFalse(Test.tornDown)
+        
+            
     def test_setup_module(self):
         class Module(object):
             moduleSetup = 0
@@ -3904,6 +3921,14 @@ class TestSetups(unittest2.TestCase):
                 raise TypeError('foo')
         
         class Test(unittest2.TestCase):
+            classSetUp = False
+            classTornDown = False
+            @classmethod
+            def setUpClass(cls):
+                Test.classSetUp = True
+            @classmethod
+            def tearDownClass(cls):
+                Test.classTornDown = True
             def test_one(self):
                 pass
             def test_two(self):
@@ -3921,10 +3946,34 @@ class TestSetups(unittest2.TestCase):
         result = self.runTests(Test, Test2)
         self.assertEqual(Module.moduleSetup, 1)
         self.assertEqual(result.testsRun, 0)
+        self.assertFalse(Test.classSetUp)
+        self.assertFalse(Test.classTornDown)
         self.assertEqual(len(result.errors), 1)
         error, _ = result.errors[0]
         self.assertEqual(str(error), 
                     'moduleSetUp (Module)')
+        
+    def test_setup_module_with_missing_module(self):
+        class Module(object):
+            moduleSetup = 0
+            @staticmethod
+            def setUpModule():
+                Module.moduleSetup += 1
+                raise TypeError('foo')
+        
+        class Test(unittest2.TestCase):
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+        Test.__module__ = 'Module'
+        if 'Module' in sys.modules:
+            del sys.modules['Module']
+        
+        result = self.runTests(Test)
+        self.assertEqual(Module.moduleSetup, 0)
+        self.assertEqual(result.testsRun, 2)
+
 
 """
 Class setup is not run for skipped classes

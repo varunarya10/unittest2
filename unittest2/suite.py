@@ -84,7 +84,10 @@ class TestSuite(unittest.TestSuite):
             return
         
         result._moduleSetUpFailed = False
-        module = sys.modules[currentModule]
+        try:
+            module = sys.modules[currentModule]
+        except KeyError:
+            return
         setUpModule = getattr(module, 'setUpModule', None)
         if setUpModule is not None:
             try:
@@ -102,8 +105,8 @@ class TestSuite(unittest.TestSuite):
                 break
             
             if _isnotsuite(test):
-                self._handleClassFixture(test, result)
                 self._handleModuleFixture(test, result)
+                self._handleClassFixture(test, result)
                 result._previousTestClass = test.__class__
                 
                 if test.__class__._classSetupFailed or result._moduleSetUpFailed:
