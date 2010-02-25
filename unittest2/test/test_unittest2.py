@@ -3816,7 +3816,7 @@ class TestSetups(unittest2.TestCase):
                 pass
             def test_two(self):
                 pass
-            
+        
         result = self.runTests(Test, Test2)
         
         self.assertEqual(Test.tearDownCalled, 1)
@@ -3950,8 +3950,7 @@ class TestSetups(unittest2.TestCase):
         self.assertFalse(Test.classTornDown)
         self.assertEqual(len(result.errors), 1)
         error, _ = result.errors[0]
-        self.assertEqual(str(error), 
-                    'moduleSetUp (Module)')
+        self.assertEqual(str(error), 'moduleSetUp (Module)')
         
     def test_setup_module_with_missing_module(self):
         class Module(object):

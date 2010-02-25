@@ -58,21 +58,22 @@ class TestSuite(unittest.TestSuite):
         for test in tests:
             self.addTest(test)
 
-    def _handleClassFixture(self, test, result):
+    def _handleClassSetUp(self, test, result):
         previousClass = getattr(result, '_previousTestClass', None)
         currentClass = test.__class__
         if currentClass == previousClass:
             return
-        self._tearDownPreviousClass(result)
+        if result._moduleSetUpFailed:
+            return
+        
         currentClass._classTornDown = False
+        currentClass._classSetupFailed = False
         
         try:
             currentClass.setUpClass()
         except:
             currentClass._classSetupFailed = True
             self._addClassSetUpError(result, currentClass)
-        else:
-            currentClass._classSetupFailed = False
     
     def _handleModuleFixture(self, test, result):
         previousModule = None
@@ -105,8 +106,9 @@ class TestSuite(unittest.TestSuite):
                 break
             
             if _isnotsuite(test):
+                self._tearDownPreviousClass(test, result)
                 self._handleModuleFixture(test, result)
-                self._handleClassFixture(test, result)
+                self._handleClassSetUp(test, result)
                 result._previousTestClass = test.__class__
                 
                 if test.__class__._classSetupFailed or result._moduleSetUpFailed:
@@ -115,14 +117,19 @@ class TestSuite(unittest.TestSuite):
             test(result)
         
         if _isnotsuite(test):
-            self._tearDownPreviousClass(result)
+            self._tearDownPreviousClass(test, result, force=True)
         return result
     
-    def _tearDownPreviousClass(self, result):
-        if getattr(result, '_previousTestClass', None) is None:
+    def _tearDownPreviousClass(self, test, result, force=False):
+        previousClass = getattr(result, '_previousTestClass', None)
+        currentClass = test.__class__
+        if not force and currentClass == previousClass:
             return
-        previousClass = result._previousTestClass
         if getattr(previousClass, '_classTornDown', True):
+            return
+        if getattr(previousClass, '_classSetupFailed', False):
+            return
+        if result._moduleSetUpFailed:
             return
         try:
             result._previousTestClass.tearDownClass()
