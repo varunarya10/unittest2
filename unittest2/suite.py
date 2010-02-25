@@ -102,9 +102,6 @@ class TestSuite(unittest.TestSuite):
             
             test(result)
 
-        if _isnotsuite(test):
-            self._tearDownPreviousClass(result)
-            
         return result
     
     def _tearDownPreviousClass(self, result):
@@ -136,6 +133,11 @@ class TestSuite(unittest.TestSuite):
         """Run the tests without collecting errors in a TestResult"""
         for test in self:
             test.debug()
+
+class _WrapperSuite(TestSuite):
+    def run(self, result):
+        TestSuite.run(self, result)
+        self._tearDownPreviousClass(result)
 
 class _ErrorHolder(object):
     """
