@@ -18,6 +18,7 @@ class TestResult(unittest.TestResult):
     formatted traceback of the error that occurred.
     """
     _previousTestClass = None
+    _moduleSetUpFailed = False
     def __init__(self):
         self.failures = []
         self.errors = []

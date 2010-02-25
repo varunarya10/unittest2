@@ -80,12 +80,21 @@ class TestSuite(unittest.TestSuite):
         if previousClass is not None:
             previousModule = previousClass.__module__
         currentModule = test.__class__.__module__
-        if currentModule != previousModule:
-            module = sys.modules[currentModule]
-            setUpModule = getattr(module, 'setUpModule', None)
-            if setUpModule is not None:
+        if currentModule == previousModule:
+            return
+        
+        result._moduleSetUpFailed = False
+        module = sys.modules[currentModule]
+        setUpModule = getattr(module, 'setUpModule', None)
+        if setUpModule is not None:
+            try:
                 setUpModule()
+            except:
+                result._moduleSetUpFailed = True
+                error = _ErrorHolder('moduleSetUp (%s)' % currentModule)
+                result.addError(error, sys.exc_info())
 
+                
     def run(self, result):
         test = None
         for test in self:
@@ -97,7 +106,7 @@ class TestSuite(unittest.TestSuite):
                 self._handleModuleFixture(test, result)
                 result._previousTestClass = test.__class__
                 
-                if test.__class__._classSetupFailed:
+                if test.__class__._classSetupFailed or result._moduleSetUpFailed:
                     continue
             
             test(result)

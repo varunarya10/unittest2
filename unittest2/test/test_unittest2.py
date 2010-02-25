@@ -3894,7 +3894,37 @@ class TestSetups(unittest2.TestCase):
         self.assertEqual(Module.moduleSetup, 1)
         self.assertEqual(result.testsRun, 2)
         self.assertEqual(len(result.errors), 0)
-
+    
+    def test_error_in_setup_module(self):
+        class Module(object):
+            moduleSetup = 0
+            @staticmethod
+            def setUpModule():
+                Module.moduleSetup += 1
+                raise TypeError('foo')
+        
+        class Test(unittest2.TestCase):
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+        
+        class Test2(unittest2.TestCase):
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+        Test.__module__ = 'Module'
+        Test2.__module__ = 'Module'
+        sys.modules['Module'] = Module
+        
+        result = self.runTests(Test, Test2)
+        self.assertEqual(Module.moduleSetup, 1)
+        self.assertEqual(result.testsRun, 0)
+        self.assertEqual(len(result.errors), 1)
+        error, _ = result.errors[0]
+        self.assertEqual(str(error), 
+                    'moduleSetUp (Module)')
 
 """
 Class setup is not run for skipped classes
