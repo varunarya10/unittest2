@@ -16,8 +16,6 @@ from unittest2.test.support import OldTestResult
 ### Support code
 ################################################################
 
-def resultFactory(*_):
-    return unittest2.TestResult()
 
 class LoggingResult(unittest2.TestResult):
     def __init__(self, log):
